@@ -1,18 +1,17 @@
-﻿using EnvDTE;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Shapes;
 
 namespace MultiPointEdit
 {
@@ -24,6 +23,7 @@ namespace MultiPointEdit
         private CaretPosition lastCaretPosition = new CaretPosition();
         private DTE2 m_dte;
         private Dictionary<string, int> positionHash = new Dictionary<string, int>();
+
         public MultiPointEditCommandFilter(IWpfTextView tv)
         {
             m_textView = tv;
@@ -69,10 +69,12 @@ namespace MultiPointEdit
                     case ((uint)VSConstants.VSStd2KCmdID.WORDPREV):
                     case ((uint)VSConstants.VSStd2KCmdID.WORDNEXT):
 
-
                         if (m_trackList.Count > 0)
+                        {
                             return SyncedOperation(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+                        }
                         break;
+
                     default:
                         break;
                 }
@@ -83,16 +85,18 @@ namespace MultiPointEdit
                 {
 
                     case ((uint)VSConstants.VSStd97CmdID.Delete):
-                    case ((uint)VSConstants.VSStd97CmdID.Paste):                    
+                    case ((uint)VSConstants.VSStd97CmdID.Paste):
                         if (m_trackList.Count > 0)
+                        {
                             return SyncedOperation(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+                        }
                         break;
+
                     default:
                         break;
                 }
             }
 
-            
             switch (nCmdID)
             {
                 
@@ -101,6 +105,7 @@ namespace MultiPointEdit
                     ClearSyncPoints();
                     RedrawScreen();
                     break;
+
                 default:
                     break;
             }
@@ -110,7 +115,6 @@ namespace MultiPointEdit
 
         private int SyncedOperation(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {   
-
             ITextCaret caret = m_textView.Caret;
             var tempTrackList = m_trackList;
             m_trackList = new List<ITrackingPoint>();
@@ -132,6 +136,7 @@ namespace MultiPointEdit
             m_dte.UndoContext.Close();
 
             RedrawScreen();
+
             return result;
         }
 
@@ -151,19 +156,22 @@ namespace MultiPointEdit
                 var curPosition = trackPoint.GetPosition(m_textView.TextSnapshot);
                 IncrementCount(positionHash, curPosition.ToString());
                 if (positionHash[curPosition.ToString()] > 1)
-                    continue;                
+                {
+                    continue;
+                }
                 DrawSingleSyncPoint(trackPoint);
                 newTrackList.Add(trackPoint);
             }
 
             m_trackList = newTrackList;
-            
         }
 
         private void IncrementCount(Dictionary<string, int> someDictionary, string id)
         {
             if (!someDictionary.ContainsKey(id))
+            {
                 someDictionary[id] = 0;
+            }
 
             someDictionary[id]++;
         }
@@ -171,7 +179,9 @@ namespace MultiPointEdit
         private void DrawSingleSyncPoint(ITrackingPoint trackPoint)
         {
             if (trackPoint.GetPosition(m_textView.TextSnapshot) >= m_textView.TextSnapshot.Length)
+            {
                 return;
+            }
 
             SnapshotSpan span = new SnapshotSpan(trackPoint.GetPoint(m_textView.TextSnapshot), 1);
             var brush = Brushes.DarkGray;
@@ -179,7 +189,9 @@ namespace MultiPointEdit
             GeometryDrawing drawing = new GeometryDrawing(brush, null, geom);
 
             if (drawing.Bounds.IsEmpty)
+            {
                 return;
+            }
 
             Rectangle rect = new Rectangle()
             {
@@ -192,12 +204,10 @@ namespace MultiPointEdit
             Canvas.SetLeft(rect, geom.Bounds.Left);
             Canvas.SetTop(rect, geom.Bounds.Top);
             m_adornmentLayer.AddAdornment(AdornmentPositioningBehavior.TextRelative, span, "MultiEditLayer", rect, null);
-
         }
 
         private void RemoveIntersectedCarets()
         {
-
         }
 
         private void AddSyncPoint(CaretPosition caretPosition)
@@ -209,8 +219,9 @@ namespace MultiPointEdit
             // Check if the bounds are valid
 
             if (curTrackPoint.GetPosition(m_textView.TextSnapshot) >= 0)
-
+            {
                 m_trackList.Add(curTrackPoint);
+            }
             else
             {
                 curTrackPoint = m_textView.TextSnapshot.CreateTrackingPoint(0, PointTrackingMode.Positive);
@@ -222,7 +233,6 @@ namespace MultiPointEdit
                 m_textView.Caret.MoveTo(curTrackPoint.GetPoint(m_textView.TextSnapshot));
             }
         }
-            
 
         private void AddSyncPoint(int position)
         {
@@ -270,7 +280,9 @@ namespace MultiPointEdit
                 if (m_textView.Selection.SelectedSpans.Count == 1)
                 {
                     if (m_trackList.Count == 0)
+                    {
                         AddSyncPoint(lastCaretPosition);
+                    }
 
                     AddSyncPoint(m_textView.Caret.Position);
                     RedrawScreen();
@@ -278,7 +290,9 @@ namespace MultiPointEdit
                 else
                 {
                     foreach (var span in m_textView.Selection.SelectedSpans)
+                    {
                         AddSyncPoint(span.Start.Position);
+                    }
 
                     m_textView.Selection.Clear();
                     RedrawScreen();
@@ -294,6 +308,7 @@ namespace MultiPointEdit
         }
 
         internal bool Added { get; set; }
+
         internal IOleCommandTarget NextTarget { get; set; }
     }
 }

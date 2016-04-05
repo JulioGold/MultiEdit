@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualStudio.Text.Editor;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
+using Microsoft.VisualStudio.Text.Editor;
 
 namespace MultiPointEdit
 {
