@@ -17,6 +17,9 @@ namespace MultiPointEdit
 {
     class MultiPointEditCommandFilter : IOleCommandTarget
     {
+        internal bool Added { get; set; }
+        internal IOleCommandTarget NextTarget { get; set; }
+
         private IWpfTextView m_textView;
         private IAdornmentLayer m_adornmentLayer;
         private List<ITrackingPoint> m_trackList;
@@ -109,6 +112,40 @@ namespace MultiPointEdit
             }
 
             return NextTarget.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+        }
+
+        public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
+        {
+            if (pguidCmdGroup == typeof(VSConstants.VSStd2KCmdID).GUID)
+            {
+                for (int i = 0; i < cCmds; i++)
+                {
+                    switch (prgCmds[i].cmdID)
+                    {
+                        case ((uint)VSConstants.VSStd2KCmdID.TYPECHAR):
+                        case ((uint)VSConstants.VSStd2KCmdID.BACKSPACE):
+                        case ((uint)VSConstants.VSStd2KCmdID.TAB):
+                        case ((uint)VSConstants.VSStd2KCmdID.LEFT):
+                        case ((uint)VSConstants.VSStd2KCmdID.RIGHT):
+                        case ((uint)VSConstants.VSStd2KCmdID.UP):
+                        case ((uint)VSConstants.VSStd2KCmdID.DOWN):
+                        case ((uint)VSConstants.VSStd2KCmdID.END):
+                        case ((uint)VSConstants.VSStd2KCmdID.HOME):
+                        case ((uint)VSConstants.VSStd2KCmdID.PAGEDN):
+                        case ((uint)VSConstants.VSStd2KCmdID.PAGEUP):
+                        case ((uint)VSConstants.VSStd2KCmdID.PASTE):
+                        case ((uint)VSConstants.VSStd2KCmdID.PASTEASHTML):
+                        case ((uint)VSConstants.VSStd2KCmdID.BOL):
+                        case ((uint)VSConstants.VSStd2KCmdID.EOL):
+                        case ((uint)VSConstants.VSStd2KCmdID.RETURN):
+                        case ((uint)VSConstants.VSStd2KCmdID.BACKTAB):
+                            prgCmds[i].cmdf = (uint)(OLECMDF.OLECMDF_ENABLED | OLECMDF.OLECMDF_SUPPORTED);
+                            return VSConstants.S_OK;
+                    }
+                }
+            }
+
+            return NextTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
         }
 
         private int SyncedOperation(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
@@ -237,40 +274,6 @@ namespace MultiPointEdit
             m_trackList.Add(m_textView.TextSnapshot.CreateTrackingPoint(Math.Max(position, 0), PointTrackingMode.Positive));
         }
 
-        public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
-        {
-            if (pguidCmdGroup == typeof(VSConstants.VSStd2KCmdID).GUID)
-            {
-                for (int i = 0; i < cCmds; i++)
-                {
-                    switch (prgCmds[i].cmdID)
-                    {
-                        case ((uint)VSConstants.VSStd2KCmdID.TYPECHAR):
-                        case ((uint)VSConstants.VSStd2KCmdID.BACKSPACE):
-                        case ((uint)VSConstants.VSStd2KCmdID.TAB):
-                        case ((uint)VSConstants.VSStd2KCmdID.LEFT):
-                        case ((uint)VSConstants.VSStd2KCmdID.RIGHT):
-                        case ((uint)VSConstants.VSStd2KCmdID.UP):
-                        case ((uint)VSConstants.VSStd2KCmdID.DOWN):
-                        case ((uint)VSConstants.VSStd2KCmdID.END):
-                        case ((uint)VSConstants.VSStd2KCmdID.HOME):
-                        case ((uint)VSConstants.VSStd2KCmdID.PAGEDN):
-                        case ((uint)VSConstants.VSStd2KCmdID.PAGEUP):
-                        case ((uint)VSConstants.VSStd2KCmdID.PASTE):
-                        case ((uint)VSConstants.VSStd2KCmdID.PASTEASHTML):
-                        case ((uint)VSConstants.VSStd2KCmdID.BOL):
-                        case ((uint)VSConstants.VSStd2KCmdID.EOL):
-                        case ((uint)VSConstants.VSStd2KCmdID.RETURN):
-                        case ((uint)VSConstants.VSStd2KCmdID.BACKTAB): 
-                            prgCmds[i].cmdf = (uint)(OLECMDF.OLECMDF_ENABLED | OLECMDF.OLECMDF_SUPPORTED);
-                            return VSConstants.S_OK;
-                    }
-                }
-            }
-
-            return NextTarget.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds, pCmdText);
-        }
-
         public void HandleClick(bool addCursor)
         {
             if (addCursor && m_textView.Selection.SelectedSpans.All(span => span.Length == 0))
@@ -304,9 +307,5 @@ namespace MultiPointEdit
 
             lastCaretPosition = m_textView.Caret.Position;
         }
-
-        internal bool Added { get; set; }
-
-        internal IOleCommandTarget NextTarget { get; set; }
     }
 }
