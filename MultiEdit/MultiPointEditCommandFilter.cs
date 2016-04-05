@@ -83,7 +83,6 @@ namespace MultiPointEdit
             {
                 switch (nCmdID)
                 {
-
                     case ((uint)VSConstants.VSStd97CmdID.Delete):
                     case ((uint)VSConstants.VSStd97CmdID.Paste):
                         if (m_trackList.Count > 0)
@@ -99,7 +98,6 @@ namespace MultiPointEdit
 
             switch (nCmdID)
             {
-                
                 // When ESC is used, cancel the Multi Edit mode
                 case ((uint)VSConstants.VSStd2KCmdID.CANCEL):
                     ClearSyncPoints();
